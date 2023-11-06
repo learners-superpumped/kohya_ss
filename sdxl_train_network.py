@@ -1,5 +1,12 @@
 import argparse
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+    if torch.xpu.is_available():
+        from library.ipex import ipex_init
+        ipex_init()
+except Exception:
+    pass
 from library import sdxl_model_util, sdxl_train_util, train_util
 import train_network
 
@@ -22,6 +29,8 @@ class SdxlNetworkTrainer(train_network.NetworkTrainer):
         assert (
             args.network_train_unet_only or not args.cache_text_encoder_outputs
         ), "network for Text Encoder cannot be trained with caching Text Encoder outputs / Text Encoderの出力をキャッシュしながらText Encoderのネットワークを学習することはできません"
+
+        train_dataset_group.verify_bucket_reso_steps(32)
 
     def load_target_model(self, args, weight_dtype, accelerator):
         (
